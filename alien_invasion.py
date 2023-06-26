@@ -2,6 +2,7 @@ import sys
 import pygame
 from settings import Settings
 from ship import Ship
+from bullet import Bullet
 class AlienInvasion:
     """管理游戏资源和行为"""
 
@@ -17,13 +18,14 @@ class AlienInvasion:
         pygame.display.set_caption("Alien Invasion")
 
         self.ship = Ship(self)
-
+        self.bullets = pygame.sprite.Group()
     def run_game(self):
         """游戏主循环"""
         while True:
             #监视键盘鼠标事件
             self._check_events()   #辅助方法
             self.ship.update()
+            self._update_bullets()
             self._update_screen()
     def _check_events(self):
         """响应按键和鼠标事件"""
@@ -43,6 +45,8 @@ class AlienInvasion:
             self.ship.moving_left = True
         elif event.key == pygame.K_q:
             sys.exit()
+        elif event.key == pygame.K_SPACE:
+            self._fire_bullet()
 
     def _check_keyup_enents(self,event):
         """响应松开"""
@@ -50,11 +54,25 @@ class AlienInvasion:
             self.ship.moving_right = False
         elif event.key == pygame.K_LEFT:
             self.ship.moving_left = False
+
+    def _fire_bullet(self):
+        """创建一颗子弹并将其加入编组bullets中"""
+        if len(self.bullets) < self.settings.bullets_allowed:
+            new_bullet = Bullet(self)
+            self.bullets.add(new_bullet)
+
+    def _update_bullets(self):
+        self.bullets.update()
+        for bullet in self.bullets.copy():
+            if bullet.rect.bottom <= 0:
+                self.bullets.remove(bullet)
+        # print(len(self.bullets))
     def _update_screen(self):
         """更新屏幕上的图像,并切换到新屏幕"""
         self.screen.fill(self.settings.bg_color)
         self.ship.blitme()
-
+        for bullet in self.bullets.sprites():
+            bullet.draw_bullet()
         # 让最近绘制的屏幕可见
         pygame.display.flip()
 
