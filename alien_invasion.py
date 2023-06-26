@@ -30,6 +30,7 @@ class AlienInvasion:
             self._check_events()   #辅助方法
             self.ship.update()
             self._update_bullets()
+            self._update_aliens()
             self._update_screen()
 
     def _create_fleet(self):
@@ -57,6 +58,20 @@ class AlienInvasion:
         alien.rect.x = alien.x
         alien.rect.y = alien.rect.height + 2 * alien.rect.height * row_number
         self.aliens.add(alien)
+
+    def _check_fleet_edges(self):
+        """if there is any alien at edge"""
+        for alien in self.aliens.sprites():
+            if alien.check_edges():
+                self._change_fleet_direction()
+                break
+
+    def _change_fleet_direction(self):
+        """move down all aliens and change their directions"""
+        for alien in self.aliens.sprites():
+            alien.rect.y += self.settings.fleet_drop_speed
+        self.settings.fleet_direction *= -1
+
     def _check_events(self):
         """响应按键和鼠标事件"""
         for event in pygame.event.get():
@@ -97,6 +112,13 @@ class AlienInvasion:
             if bullet.rect.bottom <= 0:
                 self.bullets.remove(bullet)
         # print(len(self.bullets))
+
+    def _update_aliens(self):
+        """check out if there is any alien at the edge pf screen and
+        update the position of alien among alien groups"""
+        self._check_fleet_edges()
+        self.aliens.update()
+
     def _update_screen(self):
         """更新屏幕上的图像,并切换到新屏幕"""
         self.screen.fill(self.settings.bg_color)
