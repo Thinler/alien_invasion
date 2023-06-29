@@ -5,8 +5,8 @@ class GameStats:
         """初始化统计信息"""
         self.settings = ai_game.settings
         self.reset_stats()
-        #active mode when just launched
-        self.game_active = True
+        #non-active mode when just launched
+        self.game_active = False
 
 
 
