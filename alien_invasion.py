@@ -7,6 +7,7 @@ from alien import Alien
 from time import sleep
 from game_stats import GameStats
 from button import Button
+from scoreboard import Scoreboard
 
 class AlienInvasion:
     """管理游戏资源和行为"""
@@ -22,8 +23,10 @@ class AlienInvasion:
         self.settings.screen_height = self.screen.get_rect().height
         pygame.display.set_caption("Alien Invasion")
 
-        #存储游戏统计信息的实例
+        # 存储游戏统计信息的实例
+        # 创建记分板
         self.stats = GameStats(self)
+        self.sb = Scoreboard(self)
 
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
@@ -102,6 +105,9 @@ class AlienInvasion:
             # 重置游戏统计信息
             self.stats.reset_stats()
             self.stats.game_active = True
+            self.sb.prep_score()
+            self.sb.prep_level()
+            self.sb.prep_ships()
 
             # 清空余下的外星人和子弹
             self.aliens.empty()
@@ -122,6 +128,8 @@ class AlienInvasion:
         elif event.key == pygame.K_LEFT:
             self.ship.moving_left = True
         elif event.key == pygame.K_q:
+            with open('highscore.txt','w') as file_object:
+                file_object.write(str(self.stats.high_score))
             sys.exit()
         elif event.key == pygame.K_SPACE:
             self._fire_bullet()
@@ -150,13 +158,24 @@ class AlienInvasion:
     def _check_bullet_alien_collisions(self):
         #是否有子弹击中外星人，是则delete both
         collisions = pygame.sprite.groupcollide(
-            self.bullets, self.aliens, True, True
+            self.bullets, self.aliens, True, True   #第一个True改为False，则为高能子弹
         )
+        if collisions:
+            for aliens in collisions.values():
+                self.stats.score += self.settings.alien_points * len(aliens)
+                self.sb.prep_score()
+                self.sb.check_high_score()
+
         if not self.aliens:
             #delete all bullets and create a group of aliens
             self.bullets.empty()
             self._create_fleet()
             self.settings.increase_speed()
+
+            # level up
+            self.stats.level += 1
+            self.sb.prep_score()
+
 
     def _update_aliens(self):
         """check out if there is any alien at the edge pf screen and
@@ -172,7 +191,7 @@ class AlienInvasion:
     def _ship_hit(self):
         if self.stats.ships_left > 0:
             self.stats.ships_left -=1
-
+            self.sb.prep_ships()
             self.aliens.empty()
             self.bullets.empty()
 
@@ -191,6 +210,10 @@ class AlienInvasion:
         for bullet in self.bullets.sprites():
             bullet.draw_bullet()
         self.aliens.draw(self.screen)
+
+        # 显示得分
+        self.sb.show_score()
+
         if not self.stats.game_active:
             self.play_button.draw_button()
         # 让最近绘制的屏幕可见
